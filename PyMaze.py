@@ -1,23 +1,28 @@
 import pygame, random
 from pygame.locals import *
 
-CONST_WIDTH = 640 * 2
-CONST_HEIGHT = 480 * 2
+CONST_WIDTH = 640 #* 2
+CONST_HEIGHT = 480 #* 2
 CONST_BOX_WIDTH = 8 
 CONST_BOX_HEIGHT = 8
 
 class Labirint:
-	def __init__(self, labPodlaga):
+	def __init__(self, labPodlaga, resitevPodlaga):
 		self.state = 'create'
 		self.labArr = []
 		self.lPodlaga = labPodlaga
 		self.lPodlaga.fill((0,0,0,0)) #fill with black
+		self.resPodlaga = resitevPodlaga # surface
+		self.resPodlaga.fill((0,0,0,0))
 		for i in range(CONST_HEIGHT/CONST_BOX_HEIGHT):
 			pygame.draw.line(self.lPodlaga, (0,0,0,255), (0, i * CONST_BOX_HEIGHT), (CONST_WIDTH, i * CONST_BOX_HEIGHT))
 			for j in range(CONST_WIDTH/CONST_BOX_WIDTH):
 				self.labArr.append(0x0000)
 				if (i == 0):
 					pygame.draw.line(self.lPodlaga, (0,0,0,255), (j * CONST_BOX_WIDTH, 0), (j * CONST_BOX_WIDTH, CONST_HEIGHT))
+
+		pygame.draw.rect(self.resPodlaga, (0,0,255,255), Rect(0,0,CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
+		pygame.draw.rect(self.resPodlaga, (0,0,0,0), Rect((CONST_WIDTH-CONST_BOX_WIDTH),(CONST_HEIGHT - CONST_HEIGHT),CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
 		self.vseCelice = (CONST_HEIGHT/CONST_BOX_HEIGHT) * (CONST_WIDTH/ CONST_BOX_WIDTH)
 		self.stackCelic = []
 		self.trenutnaCelica = random.randint(0, self.vseCelice-1)
@@ -35,7 +40,7 @@ class Labirint:
 				self.state = 'solve'
 				return
 			moved = False
-			while (moved == False):
+			while(self.obiskaneCelice < self.vseCelice):
 				x = self. trenutnaCelica %(CONST_WIDTH/CONST_BOX_WIDTH)
 				y = self. trenutnaCelica /(CONST_WIDTH/CONST_BOX_WIDTH)
 				#find all neighbors with walls
@@ -45,7 +50,7 @@ class Labirint:
 					ny = y + self.smeri[i][1]
 
 					#Check the borders
-					if ((nx > 0) and (ny > 0) and (nx < CONST_WIDTH/CONST_BOX_WIDTH) and (ny < CONST_HEIGHT/CONST_BOX_HEIGHT)):
+					if ((nx >= 0) and (ny >= 0) and (nx < CONST_WIDTH/CONST_BOX_WIDTH) and (ny < CONST_HEIGHT/CONST_BOX_HEIGHT)):
 						if (self.labArr[(ny * CONST_WIDTH/CONST_BOX_WIDTH + nx )] & 0x000F) == 0: #visited -> checked in binary
 							nidx = ny * CONST_WIDTH/CONST_BOX_WIDTH + nx 
 							sosedje.append((nidx, 1<<i))
@@ -80,8 +85,62 @@ class Labirint:
 				else:
 					self.trenutnaCelica = self.stackCelic.pop()
 
+		elif self.state == 'solve':
+			if self.trenutnaCelica == (self.vseCelice-1):
+				self.state = 'reset'
+				return
+			moved = False
+			while (moved == False):
+				x = self. trenutnaCelica %(CONST_WIDTH/CONST_BOX_WIDTH)
+				y = self. trenutnaCelica /(CONST_WIDTH/CONST_BOX_WIDTH)
+
+				sosedje = []
+				directions = self.labArr[self.trenutnaCelica] & 0xF
+				for i in range(len(self.smeri)):
+					if (directions & (1 << i)) > 0:
+						nx = x + self.smeri[i][0]
+						ny = y + self.smeri[i][1]
+						#Check the borders
+						if ((nx >= 0) and (ny >= 0) and (nx < CONST_WIDTH/CONST_BOX_WIDTH) and (ny < CONST_HEIGHT/CONST_BOX_HEIGHT)):
+							nidx = ny * CONST_WIDTH/CONST_BOX_WIDTH + nx 
+							if ((self.labArr[nidx] & 0xFF00) == 0): #check there's no bactrack or solution
+								sosedje.append((nidx,1 << i))
+				if (len(sosedje) > 0):
+					idx = random.randint(0, len(sosedje)-1)
+					nidx, direction = sosedje[idx]
+					dx = x * CONST_BOX_WIDTH
+					dy = y * CONST_BOX_HEIGHT
+					#set the opposite wall of the neighbor
+					if direction & 1:
+						self.labArr[nidx] |= (4 << 12)
+					elif direction & 2:
+						self.labArr[nidx] |= (8 << 12)
+					elif direction & 4:
+						self.labArr[nidx] |= (1 << 12)
+					elif direction & 8:
+						self.labArr[nidx] |= (2 << 12)
+					#Draw a green square
+					pygame.draw.rect(self.resPodlaga, (0,255,0,255), Rect(dx,dy, CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
+					self.labArr[self.trenutnaCelica] |= direction << 8
+
+					self.stackCelic.append(self.trenutnaCelica)
+					self.trenutnaCelica = nidx
+					moved = True
+				else:
+					#Draw red square
+					pygame.draw.rect(self.resPodlaga, (255,0,0,255), Rect((x*CONST_BOX_WIDTH), (y*CONST_BOX_HEIGHT), CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
+					 # Not a solution, so AND the bit to take away the solution bit
+					self.labArr[self.trenutnaCelica] &= 0xF0FF
+					self.trenutnaCelica = self.stackCelic.pop()
+		elif self.state == 'reset':
+			self.__init__(self.lPodlaga,self.resPodlaga)
+
+
+
+
 
 	def narisi(self, screen):
+		screen.blit(self.resPodlaga, (0,0))
 		screen.blit(self.lPodlaga, (0,0))
 
 
@@ -102,8 +161,11 @@ def main():
 	labPodlaga = pygame.Surface(screen.get_size())
 	labPodlaga = labPodlaga.convert_alpha() #give some alpha values
 	labPodlaga.fill((0,0,0,0))
+	resitevPodlaga = pygame.Surface(screen.get_size())
+	resitevPodlaga = labPodlaga.convert_alpha()
+	resitevPodlaga.fill((0,0,0,0))
 
-	lab = Labirint(labPodlaga)
+	lab = Labirint(labPodlaga, resitevPodlaga)
 
 
 	screen.blit(bacground, (0,0))
