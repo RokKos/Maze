@@ -22,12 +22,20 @@ class Labirint:
 					pygame.draw.line(self.lPodlaga, (0,0,0,255), (j * CONST_BOX_WIDTH, 0), (j * CONST_BOX_WIDTH, CONST_HEIGHT))
 
 		pygame.draw.rect(self.resPodlaga, (0,0,255,255), Rect(0,0,CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
-		pygame.draw.rect(self.resPodlaga, (0,0,0,0), Rect((CONST_WIDTH-CONST_BOX_WIDTH),(CONST_HEIGHT - CONST_HEIGHT),CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
+		pygame.draw.rect(self.resPodlaga, (0,0,255,255), Rect((CONST_WIDTH-CONST_BOX_WIDTH),(CONST_HEIGHT - CONST_BOX_HEIGHT),CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
 		self.vseCelice = (CONST_HEIGHT/CONST_BOX_HEIGHT) * (CONST_WIDTH/ CONST_BOX_WIDTH)
 		self.stackCelic = []
 		self.trenutnaCelica = random.randint(0, self.vseCelice-1)
 		self.obiskaneCelice = 1
 		self.smeri = [(-1,0), (0,1), (1,0), (0,-1)]
+
+		#Pims ALGORITHM	
+		self.zidovi = []
+		self.labArr[self.trenutnaCelica] |= 0x00F0 #part of the maze
+		self.zidovi.append((self.trenutnaCelica,0))
+		self.zidovi.append((self.trenutnaCelica,1))
+		self.zidovi.append((self.trenutnaCelica,2))
+		self.zidovi.append((self.trenutnaCelica,3))
 
 	def update(self):
 		if self.state == 'idle':
@@ -40,7 +48,7 @@ class Labirint:
 				self.state = 'solve'
 				return
 			moved = False
-			while(self.obiskaneCelice < self.vseCelice):
+			while(self.obiskaneCelice < self.vseCelice): # moved == False -> uncomment this line if you want to se maze generating
 				x = self. trenutnaCelica %(CONST_WIDTH/CONST_BOX_WIDTH)
 				y = self. trenutnaCelica /(CONST_WIDTH/CONST_BOX_WIDTH)
 				#find all neighbors with walls
@@ -132,6 +140,53 @@ class Labirint:
 					 # Not a solution, so AND the bit to take away the solution bit
 					self.labArr[self.trenutnaCelica] &= 0xF0FF
 					self.trenutnaCelica = self.stackCelic.pop()
+
+		elif self.state == 'prim':
+			if len(self.zidovi) <= 0:
+				self.trenutnaCelica = 0
+				self.stackCelic = []
+				self.state = 'solve'
+				return
+			moved = False
+			while  (len(self.zidovi) > 0): #(moved == False):-> uncomment this line if you want to se maze generating
+				zid = random.randint(0, len(self.zidovi)-1)
+				self.trenutnaCelica = self.zidovi[zid][0]
+				x = self. trenutnaCelica %(CONST_WIDTH/CONST_BOX_WIDTH)
+				y = self. trenutnaCelica /(CONST_WIDTH/CONST_BOX_WIDTH)
+				smer = self.zidovi[zid][1]
+				nx = x + self.smeri[smer][0]
+				ny = y + self.smeri[smer][1]
+				nidx = ny*CONST_WIDTH/CONST_BOX_WIDTH + nx 
+				dx = x * CONST_BOX_WIDTH
+				dy = y * CONST_BOX_HEIGHT
+				direction = 1 << smer
+
+				b = CONST_BOX_HEIGHT
+				if ((nx>=0) and (ny>=0) and (nx< CONST_WIDTH/CONST_BOX_WIDTH) and (ny < CONST_HEIGHT/CONST_BOX_HEIGHT)):
+					if (self.labArr[nidx] & 0x00F0) == 0:
+						if direction & 1: # if direction is West
+							self.labArr[nidx] |= (4) # if direction is East
+							pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx, dy + b/8), (dx, dy +(b*7/8)))
+						elif direction & 2: # if direction is South
+							self.labArr[nidx] |= (8) # if direction is North
+							pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b/8, dy+b), (dx+(b*7/8), dy+b))
+						elif direction & 4: # if direction is East
+							self.labArr[nidx] |= (1) # if direction is West
+							pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b, dy+b/8), (dx+b, dy+(b*7/8)))
+						elif direction & 8: # if direction is North
+							self.labArr[nidx] |= (2) # if direction is South
+							pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b/8, dy), (dx+(b*7/8), dy))
+					self.labArr[self.trenutnaCelica] |= direction
+					self.labArr[nidx] = 0x00F0 #mark as a path of maze
+					#add walls
+					self.zidovi.append((nidx, 0))
+					self.zidovi.append((nidx, 1))
+					self.zidovi.append((nidx, 2))
+					self.zidovi.append((nidx, 3))
+					moved = True
+				self.zidovi.remove(self.zidovi[zid])
+
+
 		elif self.state == 'reset':
 			self.__init__(self.lPodlaga,self.resPodlaga)
 
@@ -158,12 +213,13 @@ def main():
 	bacground = bacground.convert()
 	bacground.fill((255,255,255))
 
+
+	resitevPodlaga = pygame.Surface(screen.get_size())
+	resitevPodlaga = resitevPodlaga.convert_alpha()
+	resitevPodlaga.fill((0,0,0,0))
 	labPodlaga = pygame.Surface(screen.get_size())
 	labPodlaga = labPodlaga.convert_alpha() #give some alpha values
 	labPodlaga.fill((0,0,0,0))
-	resitevPodlaga = pygame.Surface(screen.get_size())
-	resitevPodlaga = labPodlaga.convert_alpha()
-	resitevPodlaga.fill((0,0,0,0))
 
 	lab = Labirint(labPodlaga, resitevPodlaga)
 
