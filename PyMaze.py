@@ -1,28 +1,54 @@
 import pygame, random
 from pygame.locals import *
 
+
 CONST_WIDTH = 640 #* 2
 CONST_HEIGHT = 480 #* 2
 CONST_BOX_WIDTH = 8 
 CONST_BOX_HEIGHT = 8
+
+#Colors
+BackgroundBarva = (0,0,0,0)
+BARVE = []
+Bela = (255,255,255,255)
+BARVE.append(Bela)
+Crna = (0,0,0,255)
+BARVE.append(Crna)
+Rdeca = (255,0,0,255)
+BARVE.append(Rdeca)
+Modra = (0,0,255,255)
+BARVE.append(Modra)
+Rumena = (255,255,0,255)
+BARVE.append(Rumena)
+Oranzna = (255,128,0,255)
+BARVE.append(Oranzna)
+Zelena = (0,255,0,255)
+BARVE.append(Zelena)
+Roza=(255,0,255, 255)
+BARVE.append(Roza)
+Vijolicna= (127,0,255,255)
+BARVE.append(Vijolicna)
+
+
+
 
 class Labirint:
 	def __init__(self, labPodlaga, resitevPodlaga):
 		self.state = 'create'
 		self.labArr = []
 		self.lPodlaga = labPodlaga
-		self.lPodlaga.fill((0,0,0,0)) #fill with black
+		self.lPodlaga.fill(BackgroundBarva) #fill with black
 		self.resPodlaga = resitevPodlaga # surface
-		self.resPodlaga.fill((0,0,0,0))
+		self.resPodlaga.fill(BackgroundBarva)
 		for i in range(CONST_HEIGHT/CONST_BOX_HEIGHT):
-			pygame.draw.line(self.lPodlaga, (0,0,0,255), (0, i * CONST_BOX_HEIGHT), (CONST_WIDTH, i * CONST_BOX_HEIGHT))
+			pygame.draw.line(self.lPodlaga, Crna, (0, i * CONST_BOX_HEIGHT), (CONST_WIDTH, i * CONST_BOX_HEIGHT))
 			for j in range(CONST_WIDTH/CONST_BOX_WIDTH):
 				self.labArr.append(0x0000)
 				if (i == 0):
-					pygame.draw.line(self.lPodlaga, (0,0,0,255), (j * CONST_BOX_WIDTH, 0), (j * CONST_BOX_WIDTH, CONST_HEIGHT))
+					pygame.draw.line(self.lPodlaga, Crna, (j * CONST_BOX_WIDTH, 0), (j * CONST_BOX_WIDTH, CONST_HEIGHT))
 
-		pygame.draw.rect(self.resPodlaga, (0,0,255,255), Rect(0,0,CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
-		pygame.draw.rect(self.resPodlaga, (0,0,255,255), Rect((CONST_WIDTH-CONST_BOX_WIDTH),(CONST_HEIGHT - CONST_BOX_HEIGHT),CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
+		pygame.draw.rect(self.resPodlaga, Modra, Rect(0,0,CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
+		pygame.draw.rect(self.resPodlaga, Modra, Rect((CONST_WIDTH-CONST_BOX_WIDTH),(CONST_HEIGHT - CONST_BOX_HEIGHT),CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
 		self.vseCelice = (CONST_HEIGHT/CONST_BOX_HEIGHT) * (CONST_WIDTH/ CONST_BOX_WIDTH)
 		self.stackCelic = []
 		self.trenutnaCelica = random.randint(0, self.vseCelice-1)
@@ -48,7 +74,7 @@ class Labirint:
 				self.state = 'solve'
 				return
 			moved = False
-			while(self.obiskaneCelice < self.vseCelice): # moved == False -> uncomment this line if you want to se maze generating
+			while (self.obiskaneCelice < self.vseCelice): # moved == False -> uncomment this line if you want to se maze generating
 				x = self. trenutnaCelica %(CONST_WIDTH/CONST_BOX_WIDTH)
 				y = self. trenutnaCelica /(CONST_WIDTH/CONST_BOX_WIDTH)
 				#find all neighbors with walls
@@ -74,16 +100,16 @@ class Labirint:
 
 					if direction & 1: # if direction is West
 						self.labArr[nidx] |= (4) # if direction is East
-						pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx, dy + b/8), (dx, dy +(b*7/8)))
+						pygame.draw.line(self.lPodlaga, BackgroundBarva, (dx, dy + b/8), (dx, dy +(b*7/8))) #BackgroundBarva to match Background
 					elif direction & 2: # if direction is South
 						self.labArr[nidx] |= (8) # if direction is North
-						pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b/8, dy+b), (dx+(b*7/8), dy+b))
+						pygame.draw.line(self.lPodlaga, BackgroundBarva, (dx+b/8, dy+b), (dx+(b*7/8), dy+b))
 					elif direction & 4: # if direction is East
 						self.labArr[nidx] |= (1) # if direction is West
-						pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b, dy+b/8), (dx+b, dy+(b*7/8)))
+						pygame.draw.line(self.lPodlaga, BackgroundBarva, (dx+b, dy+b/8), (dx+b, dy+(b*7/8)))
 					elif direction & 8: # if direction is North
 						self.labArr[nidx] |= (2) # if direction is South
-						pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b/8, dy), (dx+(b*7/8), dy))
+						pygame.draw.line(self.lPodlaga, BackgroundBarva, (dx+b/8, dy), (dx+(b*7/8), dy))
 
 					self.labArr[self.trenutnaCelica] |= direction
 					self.stackCelic.append(self.trenutnaCelica)
@@ -98,7 +124,7 @@ class Labirint:
 				self.state = 'reset'
 				return
 			moved = False
-			while (moved == False):
+			while (moved == False): #self.trenutnaCelica < (self.vseCelice-1): -> insta solve
 				x = self. trenutnaCelica %(CONST_WIDTH/CONST_BOX_WIDTH)
 				y = self. trenutnaCelica /(CONST_WIDTH/CONST_BOX_WIDTH)
 
@@ -128,7 +154,8 @@ class Labirint:
 					elif direction & 8:
 						self.labArr[nidx] |= (2 << 12)
 					#Draw a green square
-					pygame.draw.rect(self.resPodlaga, (0,255,0,255), Rect(dx,dy, CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
+					RadnBarva = BARVE[random.randint(1,len(BARVE)-1)] #from 1 up because you dont want to have white walls
+					pygame.draw.rect(self.resPodlaga, RadnBarva, Rect(dx,dy, CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
 					self.labArr[self.trenutnaCelica] |= direction << 8
 
 					self.stackCelic.append(self.trenutnaCelica)
@@ -136,7 +163,7 @@ class Labirint:
 					moved = True
 				else:
 					#Draw red square
-					pygame.draw.rect(self.resPodlaga, (255,0,0,255), Rect((x*CONST_BOX_WIDTH), (y*CONST_BOX_HEIGHT), CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
+					pygame.draw.rect(self.resPodlaga, Rdeca, Rect((x*CONST_BOX_WIDTH), (y*CONST_BOX_HEIGHT), CONST_BOX_WIDTH, CONST_BOX_HEIGHT))
 					 # Not a solution, so AND the bit to take away the solution bit
 					self.labArr[self.trenutnaCelica] &= 0xF0FF
 					self.trenutnaCelica = self.stackCelic.pop()
@@ -162,20 +189,21 @@ class Labirint:
 				direction = 1 << smer
 
 				b = CONST_BOX_HEIGHT
+
 				if ((nx>=0) and (ny>=0) and (nx< CONST_WIDTH/CONST_BOX_WIDTH) and (ny < CONST_HEIGHT/CONST_BOX_HEIGHT)):
 					if (self.labArr[nidx] & 0x00F0) == 0:
 						if direction & 1: # if direction is West
 							self.labArr[nidx] |= (4) # if direction is East
-							pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx, dy + b/8), (dx, dy +(b*7/8)))
+							pygame.draw.line(self.lPodlaga, BackgroundBarva, (dx, dy + b/8), (dx, dy +(b*7/8)))
 						elif direction & 2: # if direction is South
 							self.labArr[nidx] |= (8) # if direction is North
-							pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b/8, dy+b), (dx+(b*7/8), dy+b))
+							pygame.draw.line(self.lPodlaga, BackgroundBarva, (dx+b/8, dy+b), (dx+(b*7/8), dy+b))
 						elif direction & 4: # if direction is East
 							self.labArr[nidx] |= (1) # if direction is West
-							pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b, dy+b/8), (dx+b, dy+(b*7/8)))
+							pygame.draw.line(self.lPodlaga, BackgroundBarva, (dx+b, dy+b/8), (dx+b, dy+(b*7/8)))
 						elif direction & 8: # if direction is North
 							self.labArr[nidx] |= (2) # if direction is South
-							pygame.draw.line(self.lPodlaga, (0,0,0,0), (dx+b/8, dy), (dx+(b*7/8), dy))
+							pygame.draw.line(self.lPodlaga, BackgroundBarva, (dx+b/8, dy), (dx+(b*7/8), dy))
 					self.labArr[self.trenutnaCelica] |= direction
 					self.labArr[nidx] = 0x00F0 #mark as a path of maze
 					#add walls
